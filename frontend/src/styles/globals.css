@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@keyframes rotateRight {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotateLeft {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.animate-rotate-right {
+  animation: rotateRight 6s linear infinite;
+}
+
+.animate-rotate-left {
+  animation: rotateLeft 6s linear infinite;
+}
+
+.animate-zoom {
+  animation: zoom 18s ease-in-out infinite alternate;
+}
+
+@keyframes zoom {
+  0% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(1.1);
+  }
+}
+

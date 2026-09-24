@@ -8,6 +8,7 @@ import businessRoutes from "./routes/business.route.js";
 import analysisRoutes from "./routes/report.route.js";
 import aiRoutes from "./routes/aiRouters.js";
 import existingBusinessRoutes from "./routes/existingBusiness.route.js";
+import onboardingRoutes from "./routes/onboarding.route.js";
 
 const startServer = async () => {
   // ── 1. Connect PostgreSQL + sync all Sequelize models ──────────────────────
@@ -71,7 +72,9 @@ const startServer = async () => {
 
   app.use("/api/auth", authRoutes);
   app.use("/api/users", userRoutes);
-  app.use("/api/business", businessRoutes);
+  app.use("/api/business", businessRoutes);   // legacy
+  app.use("/api/businesses", businessRoutes); // frontend uses this path
+  app.use("/api/onboarding", onboardingRoutes); // wizard step-by-step endpoints
   app.use("/api/analysis", analysisRoutes);
   app.use("/api/existing-business", existingBusinessRoutes);
   app.use("/api/ai", aiRoutes);

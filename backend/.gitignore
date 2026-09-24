@@ -1,0 +1,15 @@
+#
+.env*
+node_modules
+.env
+.env.local
+.package-lock.json
+.package.json
+.package-lock.json
+.package.json
+uploads
+.pnpm-lock.yaml
+.pnpmfile.yaml
+.yarnrc
+.yarn-error.log
+.yarnrc.yml

@@ -1,110 +1,86 @@
 "use client";
-
 import "../styles/globals.css";
 import { useEffect, useState } from "react";
 import SessionWrapper from "@/components/SessionWrapper";
 import { useRouter, usePathname } from "next/navigation";
 import Providers from "./providers";
 import Sidebar from "@/components/sidebar";
+import TopBar from "@/components/TopBar";
+
+const AUTH_PAGES = ["/login", "/signup", "/onboarding", "/forgot-password", "/reset-password", "/verify-email"];
+const PUBLIC_PAGES = ["/idea-flow", "/business-upload"];
 
 export default function RootLayout({ children }) {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
-
   const [mounted, setMounted] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen,  setIsOpen]  = useState(true);
 
-  const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isAuthPage   = AUTH_PAGES.some(p => pathname === p || pathname?.startsWith(p + "/"));
+  const isPublicPage = PUBLIC_PAGES.some(p => pathname?.startsWith(p));
 
-  // Helper to clear all tokens (localStorage + cookies)
   const clearAllTokens = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    // Clear cookies too (Next.js middleware reads from cookies)
-    ["token", "accessToken", "refreshToken"].forEach((name) => {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+    ["token","accessToken","refreshToken"].forEach(k => localStorage.removeItem(k));
+    ["token","accessToken","refreshToken"].forEach(k => {
+      document.cookie = `${k}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
     });
   };
 
   useEffect(() => {
     setMounted(true);
-    const token =
-      localStorage.getItem("accessToken") || localStorage.getItem("token");
-    // If no token and not on a public page → redirect to login
-    if (!token && !isAuthPage) {
+    const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+    if (!token && !isAuthPage && !isPublicPage) {
       router.push("/login");
     }
-
-    // Development helper: ignore AbortError from interrupted media play() promises
-    // This prevents noisy console errors during hot-reload / dev interactions.
     if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-      const onUnhandledRejection = (ev) => {
-        const reason = ev && ev.reason;
-        if (reason && reason.name === "AbortError") {
-          ev.preventDefault();
-        }
-      };
-      window.addEventListener("unhandledrejection", onUnhandledRejection);
-      return () => window.removeEventListener("unhandledrejection", onUnhandledRejection);
+      const h = (ev) => { if (ev?.reason?.name === "AbortError") ev.preventDefault(); };
+      window.addEventListener("unhandledrejection", h);
+      return () => window.removeEventListener("unhandledrejection", h);
     }
   }, [pathname, router]);
 
-  // Sidebar width values
-  const sidebarW = isOpen ? "240px" : "64px";
+  const sidebarW = isOpen ? "var(--q-sidebar-w)" : "var(--q-sidebar-w-col)";
 
   return (
     <html lang="en">
-      <SessionWrapper children={children}>
-            <body className="bg-[#0a0c12] text-white" suppressHydrationWarning>
-            <Providers>
-              {!mounted ? (
-                <div className="min-h-screen" />
-              ) : isAuthPage ? (
-                /* ── AUTH PAGES ── */
-                <div className="min-h-screen flex items-center justify-center px-4 bg-[#0a0c12]">
-                  {children}
+      <head>
+        <title>Quantora — AI Business Decision Intelligence</title>
+        <meta name="description" content="Turn business data into better decisions. Diagnose. Predict. Simulate. Decide. Grow." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+      </head>
+      <SessionWrapper>
+        <body suppressHydrationWarning style={{ background: "var(--q-bg)", color: "var(--q-text-1)" }}>
+          <Providers>
+            {!mounted ? (
+              <div style={{ minHeight: "100vh", background: "var(--q-bg)" }} />
+            ) : isAuthPage ? (
+              /* ── AUTH PAGES — no sidebar ── */
+              <>{children}</>
+            ) : (
+              /* ── APP SHELL ── */
+              <div style={{ display: "flex", minHeight: "100vh" }}>
+                <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+                <div style={{
+                  marginLeft: sidebarW,
+                  flex: 1,
+                  minHeight: "100vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "margin-left 300ms cubic-bezier(0.4,0,0.2,1)",
+                  background: "var(--q-bg)",
+                }}>
+                  <TopBar />
+                  <main style={{ flex: 1, overflowY: "auto" }}>
+                    {children}
+                  </main>
                 </div>
-              ) : (
-                /* ── MAIN APP SHELL ── */
-                <div className="flex min-h-screen bg-[#0a0c12]">
-
-                  {/* SIDEBAR – fixed, drives layout */}
-                  <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
-
-                  {/* RIGHT COLUMN – header + scrollable content */}
-                  <div
-                    className="flex flex-col flex-1 min-h-screen transition-all duration-300"
-                    style={{ marginLeft: sidebarW }}
-                  >
-                    {/* TOP BAR */}
-                    <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 border-b border-white/8 bg-[#0a0c12]/80 backdrop-blur-md">
-                      <div className="flex items-center gap-3">
-                        <span className="text-white/40 text-sm font-medium capitalize">
-                          {pathname?.replace("/", "") || "Dashboard"}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          clearAllTokens();
-                          router.push("/login");
-                        }}
-                        className="text-xs font-medium text-white/50 hover:text-white border border-white/10 hover:border-white/30 px-3 py-1.5 rounded-lg transition-all duration-200"
-                      >
-                        Sign out
-                      </button>
-                    </header>
-
-                    {/* PAGE CONTENT */}
-                    <main className="flex-1 overflow-y-auto">
-                      {children}
-                    </main>
-                  </div>
-
-                </div>
-              )}
-            </Providers>
-          </body>
+              </div>
+            )}
+          </Providers>
+        </body>
       </SessionWrapper>
     </html>
   );

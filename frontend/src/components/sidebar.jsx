@@ -1,241 +1,184 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  LayoutDashboard,
-  Briefcase,
-  BarChart3,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  Zap,
-} from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { useBusiness } from "@/context/BusinessContext";
+import {
+  LayoutDashboard, Zap, Building2, BarChart3, Bot, Target,
+  TrendingUp, AlertTriangle, Lightbulb, Shuffle, Eye,
+  Users, Package, Flag, Globe, FileText, Bell,
+  User, Settings, LogOut, ChevronLeft, ChevronRight,
+  ChevronDown, Plus, Sparkles,
+} from "lucide-react";
 
-import cn from "@/lib/cn";
+const NAV = [
+  { section: "MAIN",         items: [
+    { icon: LayoutDashboard, label: "Dashboard",          path: "/dashboard" },
+  ]},
+  { section: "BUSINESS",     items: [
+    { icon: Building2,       label: "Businesses",         path: "/businesses" },
+    { icon: Zap,             label: "Startup Ideas",      path: "/idea-flow" },
+  ]},
+  { section: "INTELLIGENCE", items: [
+    { icon: BarChart3,       label: "Analytics",          path: "/analytics" },
+    { icon: Bot,             label: "AI Business Doctor", path: "/ai-doctor",   badge: "AI" },
+    { icon: Target,          label: "Next Best Actions",  path: "/actions" },
+    { icon: TrendingUp,      label: "Predictions",        path: "/predictions" },
+    { icon: AlertTriangle,   label: "Risk Radar",         path: "/risks" },
+    { icon: Lightbulb,       label: "Opportunity Radar",  path: "/opportunities" },
+    { icon: Shuffle,         label: "Decision Simulator", path: "/simulator" },
+  ]},
+  { section: "CUSTOMERS",    items: [
+    { icon: Users,           label: "Customers",          path: "/customers" },
+    { icon: Package,         label: "Products",           path: "/products" },
+  ]},
+  { section: "STRATEGY",     items: [
+    { icon: Flag,            label: "Goals",              path: "/goals" },
+    { icon: Globe,           label: "Market Intelligence",path: "/market" },
+    { icon: Eye,             label: "Investor Readiness", path: "/investor-readiness" },
+  ]},
+  { section: "REPORTING",    items: [
+    { icon: FileText,        label: "Reports",            path: "/reports" },
+  ]},
+];
+
+const BOTTOM_NAV = [
+  { icon: Bell,     label: "Notifications", path: "/notifications", badge: 0 },
+  { icon: User,     label: "Profile",       path: "/profile" },
+  { icon: Settings, label: "Settings",      path: "/settings" },
+];
 
 export default function Sidebar({ isOpen, setIsOpen }) {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
+  const { selected, isDemo, businesses, selectBusiness, enterDemoMode, exitDemoMode } = useBusiness();
 
-  const [ideaData, setIdeaData] = useState(null);
-  const [existingData, setExistingData] = useState(null);
+  const go = (path) => router.push(path);
+  const isActive = (path) => pathname === path || (path !== "/dashboard" && pathname?.startsWith(path));
 
-  useEffect(() => {
-    try {
-      const idea = localStorage.getItem("ideaData");
-      const existing = localStorage.getItem("existingData");
+  // Resolve business display name — never hardcode
+  const displayName = isDemo
+    ? "NovaMart (Demo)"
+    : selected?.businessName || selected?.name || "No business selected";
 
-      if (idea) setIdeaData(JSON.parse(idea));
-      if (existing) setExistingData(JSON.parse(existing));
-    } catch (e) {
-      console.warn("Failed to parse sidebar data", e);
-    }
-  }, [pathname]);
+  const displayInitial = (isDemo ? "N" : (displayName[0] || "?")).toUpperCase();
+  const bgColor = isDemo ? "linear-gradient(135deg,#1e40af,#7c3aed)" : "linear-gradient(135deg,#8B1A1A,#C0392B)";
+
+  const clearAllTokens = () => {
+    ["token","accessToken","refreshToken"].forEach(k => localStorage.removeItem(k));
+    ["q_mode","q_selected_business"].forEach(k => localStorage.removeItem(k));
+    ["token","accessToken","refreshToken"].forEach(k => {
+      document.cookie = `${k}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+    });
+  };
 
   return (
-    <>
-      {/* SIDEBAR */}
-      <aside className={cn(
-        "fixed top-0 left-0 h-full z-40",
-        "flex flex-col",
-        "bg-[#0f1117] border-r border-white/8",
-        "transition-all duration-300 ease-in-out",
-        isOpen ? "w-60" : "w-16"
-      )}>
-        {/* LOGO + TOGGLE */}
-        <div className={cn(
-          "flex items-center h-16 border-b border-white/8",
-          isOpen ? "px-4 justify-between" : "px-0 justify-center"
-        )}>
-          {isOpen && (
-            <div className={"flex items-center gap-2 overflow-hidden"}>
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center flex-shrink-0">
-                <Zap size={14} className="text-white" />
-              </div>
-              <span className="text-white font-semibold text-sm whitespace-nowrap">
-                Quantora
-              </span>
-            </div>
-          )}
-
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className={cn(
-              "flex items-center justify-center w-8 h-8 rounded-lg",
-              "text-white/50 hover:text-white hover:bg-white/10",
-              "transition-all duration-200 flex-shrink-0",
-              !isOpen ? "mx-auto" : ""
-            )}
-            title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-          </button>
-        </div>
-
-        {/* NAV ITEMS */}
-        <nav className="flex-1 py-4 flex flex-col gap-1 px-2 overflow-hidden">
-          <NavItem
-            icon={<LayoutDashboard size={18} />}
-            label="Dashboard"
-            isOpen={isOpen}
-            active={pathname === "/dashboard"}
-            onClick={() => router.push("/dashboard")}
-          />
-
-          <NavItem
-            icon={<Zap size={18} />}
-            label="Idea"
-            isOpen={isOpen}
-            active={pathname === "/idea-flow"}
-            onClick={() => {
-              localStorage.setItem("flowType", "idea");
-              router.push("/idea-flow");
-            }}
-          />
-
-          <NavItem
-            icon={<Briefcase size={18} />}
-            label="Existing Business"
-            isOpen={isOpen}
-            active={pathname?.startsWith("/business-upload")}
-            onClick={() => {
-              localStorage.setItem("flowType", "existing");
-              router.push("/business-upload");
-            }}
-          />
-
-          {/* removed legacy 'Business' route - replaced by user items below */}
-
-          <NavItem
-            icon={<BarChart3 size={18} />}
-            label="Analysis"
-            isOpen={isOpen}
-            active={pathname?.startsWith("/analysis")}
-            onClick={() => router.push("/analysis")}
-          />
-
-          <NavItem
-            icon={<FileText size={18} />}
-            label="Reports"
-            isOpen={isOpen}
-            active={false}
-            onClick={() => { }}
-          />
-        </nav>
-
-        {/* USER ITEMS (Idea / Existing Business) */}
-        <div className="px-3 mt-4 overflow-hidden">
-          {isOpen && (
-            <div className="space-y-3">
-              <div>
-                <h4 className="text-xs text-white/40">Your Idea</h4>
-
-                {ideaData ? (
-                  <div className="mt-2 bg-white/3 p-3 rounded-md border border-white/6">
-                    <div className="text-sm font-semibold text-white truncate">
-                      {ideaData.name || ideaData.idea || "Unnamed"}
-                    </div>
-                    <div className="text-xs text-white/50 mt-1 truncate">
-                      {ideaData.idea || ideaData.problem || "—"}
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() => {
-                          localStorage.setItem("ideaEdit", JSON.stringify(ideaData));
-                          router.push("/idea-flow");
-                        }}
-                        className="text-xs px-3 py-1 rounded bg-blue-700/80"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          localStorage.setItem("flowType", "idea");
-                          router.push("/analysis");
-                        }}
-                        className="text-xs px-3 py-1 rounded bg-white/6"
-                      >
-                        View Analysis
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 text-xs text-white/30">No idea saved yet</div>
-                )}
-              </div>
-
-              <div>
-                <h4 className="text-xs text-white/40">Your Existing Business</h4>
-
-                {existingData ? (
-                  <div className="mt-2 bg-white/3 p-3 rounded-md border border-white/6">
-                    <div className="text-sm font-semibold text-white truncate">
-                      {existingData.businessName || "Unnamed Business"}
-                    </div>
-                    <div className="text-xs text-white/50 mt-1 truncate">
-                      {existingData.platform || existingData.location || "—"}
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        onClick={() => {
-                          localStorage.setItem("existingEdit", JSON.stringify(existingData));
-                          router.push("/business-upload");
-                        }}
-                        className="text-xs px-3 py-1 rounded bg-blue-700/80"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          localStorage.setItem("flowType", "existing");
-                          router.push("/analysis");
-                        }}
-                        className="text-xs px-3 py-1 rounded bg-white/6"
-                      >
-                        View Analysis
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 text-xs text-white/30">No existing business saved</div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-        {/* FOOTER */}
+    <aside
+      className="q-sidebar"
+      style={{ width: isOpen ? "var(--q-sidebar-w)" : "var(--q-sidebar-w-col)" }}
+    >
+      {/* Logo + Toggle */}
+      <div style={{
+        display: "flex", alignItems: "center",
+        justifyContent: isOpen ? "space-between" : "center",
+        padding: isOpen ? "0 14px 0 16px" : "0",
+        height: "var(--q-topbar-h)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        flexShrink: 0,
+      }}>
         {isOpen && (
-          <div className="px-4 py-4 border-t border-white/8">
-            <p className="text-white/25 text-xs text-center">
-              v1.0 · AI Powered
-            </p>
+          <button onClick={() => go("/dashboard")} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer" }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#8B1A1A,#C0392B)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Sparkles size={15} color="#fff" />
+            </div>
+            <span style={{ color: "#fff", fontWeight: 700, fontSize: "1rem", letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Quantora</span>
+          </button>
+        )}
+        <button onClick={() => setIsOpen(!isOpen)} style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+          {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+        </button>
+      </div>
+
+      {/* Business selector */}
+      {isOpen && (
+        <div style={{ padding: "12px 12px 0" }}>
+          <button
+            onClick={() => go("/businesses")}
+            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.85)", cursor: "pointer", fontSize: "0.8125rem", fontWeight: 500, fontFamily: "inherit" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <span style={{ width: 20, height: 20, borderRadius: 4, background: bgColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                {displayInitial}
+              </span>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{displayName}</span>
+            </span>
+            <ChevronDown size={13} style={{ color: "rgba(255,255,255,0.4)", flexShrink: 0 }} />
+          </button>
+          {isDemo && (
+            <div style={{ marginTop: 6, padding: "4px 10px", background: "rgba(37,99,235,0.2)", borderRadius: 6, textAlign: "center" }}>
+              <span style={{ fontSize: "0.7rem", color: "#60a5fa", fontWeight: 600 }}>🎮 DEMO MODE</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Nav items */}
+      <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 8px 0" }}>
+        {NAV.map(({ section, items }) => (
+          <div key={section}>
+            {isOpen && <div className="q-nav-section-label">{section}</div>}
+            {items.map(({ icon: Icon, label, path, badge }) => {
+              const active = isActive(path);
+              return (
+                <button key={path} onClick={() => go(path)}
+                  className={`q-nav-item${active ? " active" : ""}`}
+                  title={!isOpen ? label : undefined}
+                  style={{ justifyContent: isOpen ? "flex-start" : "center", marginBottom: 2 }}>
+                  <Icon size={17} style={{ flexShrink: 0 }} />
+                  {isOpen && (
+                    <>
+                      <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+                      {badge === "AI" && (
+                        <span style={{ fontSize: "0.6rem", fontWeight: 700, background: "#8B1A1A", color: "#fff", padding: "1px 5px", borderRadius: 4 }}>AI</span>
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+
+      {/* Bottom nav */}
+      <div style={{ padding: "8px", borderTop: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        {BOTTOM_NAV.map(({ icon: Icon, label, path }) => {
+          const active = isActive(path);
+          return (
+            <button key={path} onClick={() => go(path)}
+              className={`q-nav-item${active ? " active" : ""}`}
+              title={!isOpen ? label : undefined}
+              style={{ justifyContent: isOpen ? "flex-start" : "center", marginBottom: 2 }}>
+              <Icon size={17} style={{ flexShrink: 0 }} />
+              {isOpen && <span style={{ flex: 1, textAlign: "left" }}>{label}</span>}
+            </button>
+          );
+        })}
+
+        {/* Logout */}
+        <button
+          onClick={() => { clearAllTokens(); router.push("/login"); }}
+          className="q-nav-item"
+          title={!isOpen ? "Sign out" : undefined}
+          style={{ justifyContent: isOpen ? "flex-start" : "center", color: "rgba(220,38,38,0.7)", marginTop: 2 }}>
+          <LogOut size={17} style={{ flexShrink: 0 }} />
+          {isOpen && <span>Sign out</span>}
+        </button>
+
+        {isOpen && (
+          <div style={{ textAlign: "center", padding: "8px 0 2px", fontSize: "0.6875rem", color: "rgba(255,255,255,0.2)" }}>
+            Quantora v1.0 · AI Powered
           </div>
         )}
-      </aside>
-    </>
-  );
-}
-
-function NavItem({ icon, label, active, onClick, isOpen }) {
-  return (
-    <button
-      onClick={onClick}
-      title={!isOpen ? label : undefined}
-      className={cn(
-        "flex items-center gap-3 w-full rounded-lg transition-all duration-200",
-        isOpen ? "px-3 py-2.5" : "px-0 py-2.5 justify-center",
-        active
-          ? "bg-blue-600/20 text-blue-400 border border-blue-500/30"
-          : "text-white/50 hover:bg-white/6 hover:text-white border border-transparent"
-      )}
-    >
-      <span className="flex-shrink-0">{icon}</span>
-      {isOpen && (
-        <span className="text-sm font-medium whitespace-nowrap overflow-hidden">
-          {label}
-        </span>
-      )}
-    </button>
+      </div>
+    </aside>
   );
 }

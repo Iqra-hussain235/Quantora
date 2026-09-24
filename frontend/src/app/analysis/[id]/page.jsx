@@ -335,7 +335,17 @@ export default function AnalysisPage() {
                     </div>
                   </div>
                 </div>
-                {[
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* UPGRADE PROMPT */}
+        {analysis?.growth && (
+          <Card title="🚀 Unlock Full Potential">
+            <h2 className="text-2xl font-bold text-white mb-2">Market Size</h2>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {[
                 { label: "TAM", value: `$${analysis.growth.tam_usd_bn}B`, color: "text-blue-400" },
                 { label: "SAM", value: `$${analysis.growth.sam_usd_bn}B`, color: "text-violet-400" },
                 { label: "SOM", value: `$${analysis.growth.som_usd_mn}M`, color: "text-purple-400" },
@@ -345,7 +355,7 @@ export default function AnalysisPage() {
                   <p className={cn("text-2xl font-bold", color)}>{value}</p>
                 </div>
               ))}
-            <h2 className="text-2xl font-bold text-white mb-2">🚀 Unlock Full Potential</h2>
+            </div>
             <p className="text-gray-300 mb-4">
               Get detailed insights, export reports, and advanced analytics.
             </p>
@@ -361,12 +371,13 @@ export default function AnalysisPage() {
             >
               Maybe Later
             </button>
-          </div>
-        </div>
-      )}
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
+
 
 // Helper Components
 function Card({ title, children }) {
